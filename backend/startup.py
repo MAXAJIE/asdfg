@@ -180,15 +180,16 @@ async def main():
         print("\n🟢 All systems go! Starting uvicorn...\n")
 
         # Start uvicorn
-        subprocess.run(
-            [
-                sys.executable, "-m", "uvicorn",
-                "main:app",
-                "--reload",
-                "--host", "0.0.0.0",
-                "--port", "8000",
-            ]
+        # startup.py lines 182–191 — REPLACE subprocess.run with:
+        import uvicorn
+        uvicorn.run(
+            "main:app",
+            host="0.0.0.0",
+            port=8000,
+            # NO --reload: reload conflicts with ProactorEventLoop on Windows.
+            # Use `python startup.py` and manually restart for code changes.
         )
+
     else:
         print("\n🔴 Fix the issues above before starting.\n")
         sys.exit(1)

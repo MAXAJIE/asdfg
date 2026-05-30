@@ -42,8 +42,8 @@ def _load_config() -> dict:
 
 _CONFIG = _load_config()
 _LLM_CFG = _CONFIG.get("llm", {}) if isinstance(_CONFIG.get("llm"), dict) else {}
-LLM_MODEL: str = _LLM_CFG.get("model", "deepseek-ai/DeepSeek-V3.2-TEE")
-LLM_MAX_TOKENS: int = int(_LLM_CFG.get("max_tokens", 2000))
+LLM_MODEL: str = _LLM_CFG.get("model", "gemini-2.5-flash-lite")
+LLM_MAX_TOKENS: int = int(_LLM_CFG.get("max_tokens", 20000))
 LLM_CONCURRENCY: int = int(_LLM_CFG.get("concurrency", 3))
 print(f"[llm_client] model={LLM_MODEL} max_tokens={LLM_MAX_TOKENS} concurrency={LLM_CONCURRENCY}")
 
@@ -54,10 +54,10 @@ llm_semaphore = asyncio.Semaphore(LLM_CONCURRENCY)
 # Defaults follow the user's spec:
 #   remarks   → light Llama 3.1 8B on Chutes
 #   reasoning → Qwen (dislike analysis)
-REMARKS_MODEL: str = os.getenv("REMARKS_MODEL", "Qwen/Qwen2.5-Coder-32B-Instruct-TEE")
-REASONING_MODEL: str = os.getenv("REASONING_MODEL", "Qwen/Qwen3-235B-A22B-Thinking-2507")
-REMARKS_MAX_TOKENS: int = int(os.getenv("REMARKS_MAX_TOKENS", "512"))
-REMARKS_CONCURRENCY: int = int(os.getenv("REMARKS_CONCURRENCY", "8"))
+REMARKS_MODEL: str = os.getenv("REMARKS_MODEL", "")
+REASONING_MODEL: str = os.getenv("REASONING_MODEL", "")
+REMARKS_MAX_TOKENS: int = int(os.getenv("REMARKS_MAX_TOKENS", ""))
+REMARKS_CONCURRENCY: int = int(os.getenv("REMARKS_CONCURRENCY", ""))
 print(f"[llm_client] REMARKS_MODEL={REMARKS_MODEL} REASONING_MODEL={REASONING_MODEL} "
       f"REMARKS_MAX_TOKENS={REMARKS_MAX_TOKENS} REMARKS_CONCURRENCY={REMARKS_CONCURRENCY}")
 
@@ -149,15 +149,15 @@ class LLMClient:
         reraise=True,
     )
     async def _call_api(self, payload: dict) -> dict:
-        """
-        Internal API call with jittered exponential backoff (up to 5 tries).
-        Only retries transport errors and retryable HTTP statuses.
-        Raises on final failure.
-        """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+
+        # Disable Gemini 2.5 Flash thinking via the OpenAI-compat parameter.
+        # "thinking_budget_tokens" is NOT valid — it returns 400.
+        # "reasoning_effort": "none" is the correct field per Google's docs.
+        payload = {**payload, "reasoning_effort": "none"}
 
         response = await self.client.post(
             f"{self.base_url}/chat/completions",
