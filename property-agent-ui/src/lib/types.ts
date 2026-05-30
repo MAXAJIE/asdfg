@@ -84,6 +84,8 @@ export interface PropertyResult {
   missing_features?: string[];
   remedy?: string | null;
   image_url?: string;
+  // Full gallery used by the Phase 3 detail dialog (carousel).
+  image_urls?: string[];
   url?: string;
   // C4: surfaced by backend Property model; true for demo/mock fixtures.
   // Hidden by ResultsBatch when the session is not degraded / forced_demo.

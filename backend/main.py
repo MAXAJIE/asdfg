@@ -878,11 +878,19 @@ async def chat_opening(request: ChatOpeningRequest):
 
     # Synthetic kickoff turn. Not persisted to dialogue_history so it
     # never bleeds into the user-visible transcript.
+    # Language-agnostic kickoff. The system prompt already contains a
+    # strict "=== OUTPUT LANGUAGE ===" block that pins the reply to the
+    # user's chosen UI language (default English). Writing this kickoff
+    # in any natural language would bias the LLM to echo that language
+    # regardless of the toggle — keep it English-only so the system
+    # prompt is the single source of truth for output language.
     kickoff_user = (
-        "[SYSTEM_KICKOFF] 對話即將開始。請依據上方 Phase 1 已確認資料與 KNOWN FACTS，"
-        "用一句簡短的歡迎語自我介紹，然後立刻提出『必填細節』中尚未明朗、"
-        "對搜索最關鍵的 1 個問題。輸出仍須嚴格遵守 JSON 格式；"
-        "禁止重複詢問任何 confirmed_facts；禁止觸發 fc_trigger。"
+        "[SYSTEM_KICKOFF] The Phase 2 dialogue is about to start. Using "
+        "the Phase 1 KNOWN FACTS above, write one short welcome sentence "
+        "to introduce yourself, then immediately ask the single most "
+        "important still-missing must-fill detail. Output MUST follow "
+        "the strict JSON schema; do NOT re-ask any field in confirmed_facts; "
+        "do NOT trigger fc_trigger. Respect the OUTPUT LANGUAGE block."
     )
 
     messages = [
@@ -1198,6 +1206,7 @@ def _to_property_result(prop, remark, index):
         missing_features=(list(remark.missing_features) if remark is not None else []),
         remedy=(remark.remedy if remark is not None else None),
         image_url=(images[0] if images else None),
+        image_urls=images,
         url=sd.listing_url,
         is_mock=bool(getattr(prop, "is_mock", False)),
     )

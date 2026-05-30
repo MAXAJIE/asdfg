@@ -345,6 +345,13 @@ export const DICT: Dict = {
   "ft.label.identity": { en: "IDENTITY", zh: "身份" },
   "ft.label.style":    { en: "STYLE",    zh: "风格" },
   "ft.label.gender":   { en: "GENDER",   zh: "性别" },
+
+  // ── Phase 3 detail dialog ─────────────────────────────────────────
+  "results.detail.view":     { en: "View details", zh: "查看详情" },
+  "results.detail.gallery":  { en: "Photo {n} of {total}", zh: "第 {n} / {total} 张" },
+  "results.detail.no_image": { en: "No photos available", zh: "暂无图片" },
+  "results.detail.cta":      { en: "View on Mudah.my ↗", zh: "前往 Mudah.my ↗" },
+  "results.detail.close":    { en: "Close", zh: "关闭" },
 };
 
 // `t(key, lang, vars?)` — main translation entry point.

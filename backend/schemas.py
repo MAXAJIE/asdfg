@@ -194,6 +194,10 @@ class PropertyResult(BaseModel):
     missing_features: list[str] = Field(default_factory=list)
     remedy: Optional[str] = None
     image_url: Optional[str] = None
+    # Full gallery (every image scraped for this listing). The Phase 3
+    # detail dialog renders this as a carousel. `image_url` above stays
+    # the single thumbnail used by the card grid.
+    image_urls: list[str] = Field(default_factory=list)
     url: Optional[str] = None
     is_mock: bool = False
 
