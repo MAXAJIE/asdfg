@@ -1,38 +1,7 @@
-From: Lovable <agent@lovable.dev>
-Subject: [PATCH] phase-3: clickable property cards with detail Dialog (carousel + mudah.my CTA)
-
-Apply AFTER wsdfc_fix_v2.patch and wsdfc_lang_fix.patch.
-
-What changes
-------------
-1. backend/schemas.py
-   PropertyResult gains `image_urls: list[str]` so the full gallery (already
-   present in scraped_data) is forwarded, not just the first image.
-
-2. backend/main.py
-   _to_property_result() forwards `image_urls=images` (no new fetch, no new
-   endpoint — pure passthrough of already-scraped data).
-
-3. property-agent-ui/src/lib/types.ts
-   PropertyResult interface gains optional `image_urls?: string[]`.
-
-4. property-agent-ui/src/lib/i18n.ts
-   Three new keys: results.detail.view / results.detail.cta / results.detail.photo_of.
-
-5. property-agent-ui/src/components/phases/ResultsBatch.tsx
-   Card body (image, title, location, price, tags, AI remarks, trade-offs)
-   becomes a single button that opens a shadcn Dialog containing:
-     - a shadcn Carousel of every image in image_urls (fallback to image_url)
-     - title as a link to the listing (target=_blank rel=noopener noreferrer)
-     - location, price, feature tags, AI remarks, trade-offs
-     - a primary "View on Mudah.my ↗" CTA
-   The "Not interested" button + reason input are KEPT OUTSIDE the
-   clickable region so they keep working as before.
-
 diff --git a/backend/schemas.py b/backend/schemas.py
 --- a/backend/schemas.py
 +++ b/backend/schemas.py
-@@
+@@ -177,14 +177,18 @@ class PropertyResult(BaseModel):
  class PropertyResult(BaseModel):
      property_id: str
      title: Optional[str] = None
@@ -54,7 +23,7 @@ diff --git a/backend/schemas.py b/backend/schemas.py
 diff --git a/backend/main.py b/backend/main.py
 --- a/backend/main.py
 +++ b/backend/main.py
-@@ def _to_property_result(prop, remark, index):
+@@ -1193,7 +1193,8 @@ def _to_property_result(prop, remark, index):
          missing_features=(list(remark.missing_features) if remark is not None else []),
          remedy=(remark.remedy if remark is not None else None),
          image_url=(images[0] if images else None),
@@ -66,7 +35,7 @@ diff --git a/backend/main.py b/backend/main.py
 diff --git a/property-agent-ui/src/lib/types.ts b/property-agent-ui/src/lib/types.ts
 --- a/property-agent-ui/src/lib/types.ts
 +++ b/property-agent-ui/src/lib/types.ts
-@@
+@@ -86,3 +86,7 @@ export interface PropertyResult {
    image_url?: string;
 +  // Full gallery surfaced by the backend (see _to_property_result in
 +  // backend/main.py). The phase-3 detail dialog renders this as a carousel;
@@ -77,7 +46,7 @@ diff --git a/property-agent-ui/src/lib/types.ts b/property-agent-ui/src/lib/type
 diff --git a/property-agent-ui/src/lib/i18n.ts b/property-agent-ui/src/lib/i18n.ts
 --- a/property-agent-ui/src/lib/i18n.ts
 +++ b/property-agent-ui/src/lib/i18n.ts
-@@
+@@ -236,5 +236,8 @@
    "results.btn.not_interested": { en: "Not interested", zh: "不感兴趣" },
 +  "results.detail.view":        { en: "View details",         zh: "查看详情" },
 +  "results.detail.cta":         { en: "View on Mudah.my",     zh: "在 Mudah.my 查看" },
@@ -89,7 +58,7 @@ diff --git a/property-agent-ui/src/lib/i18n.ts b/property-agent-ui/src/lib/i18n.
 diff --git a/property-agent-ui/src/components/phases/ResultsBatch.tsx b/property-agent-ui/src/components/phases/ResultsBatch.tsx
 --- a/property-agent-ui/src/components/phases/ResultsBatch.tsx
 +++ b/property-agent-ui/src/components/phases/ResultsBatch.tsx
-@@
+@@ -1,17 +1,31 @@
  import { useEffect, useRef, useState } from "react";
  import {
    MapPin,
@@ -121,7 +90,7 @@ diff --git a/property-agent-ui/src/components/phases/ResultsBatch.tsx b/property
 +} from "@/components/ui/carousel";
  import { t, type Lang } from "@/lib/i18n";
  import { toast } from "sonner";
-@@
+@@ -78,166 +92,330 @@ function PropertyCard({
  function PropertyCard({
    property,
    degraded,
