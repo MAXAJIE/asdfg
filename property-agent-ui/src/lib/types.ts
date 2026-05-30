@@ -26,7 +26,8 @@ export type SearchStage =
   | "scraping"
   | "ranking"
   | "generating_remarks"
-  | "complete";
+  | "complete"
+  | "error";
 
 
 export interface Phase1Form {
@@ -119,6 +120,7 @@ export interface SearchStatusResponse {
   tier3_triggered?: boolean;
   degraded?: boolean;
   results?: PropertyResult[];
+  error?: string | null;
   // Backend builds this via build_remarks_for_batch and aligns it 1:1 with
   // `results` (same length, same index). Entries may be null when no remark
   // was generated for that property. See backend/main.py:build_remarks_for_batch.

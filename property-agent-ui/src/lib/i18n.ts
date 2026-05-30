@@ -259,6 +259,10 @@ export const DICT: Dict = {
   "search.stage.scraping":   { en: "Scraping",   zh: "抓取" },
   "search.stage.ranking":    { en: "Ranking",    zh: "排序" },
   "search.stage.generating": { en: "Generating", zh: "生成" },
+  "search.error": {
+    en: "Search failed. Please try again or refine your requirements.",
+    zh: "搜索失败，请重试或调整需求。",
+  },
   "search.footer": {
     en: "input locked · search pipeline running",
     zh: "输入已锁定 · 搜索流水线运行中",

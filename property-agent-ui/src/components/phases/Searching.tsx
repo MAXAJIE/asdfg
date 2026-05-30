@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Search, Sparkles, BarChart3, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { getClosedSessionReason, subscribeSearchStatus } from "@/lib/api";
 import type {
@@ -46,6 +47,12 @@ export function Searching() {
       if (data.status === "complete") {
         completePayload.current = data;
         setBackendComplete(true);
+      } else if (data.status === "error") {
+        // Pipeline aborted server-side. Leave the Searching screen instead
+        // of polling indefinitely; let the user retry from chat.
+        stop();
+        toast.error(t("search.error", lang));
+        setAppState("CHATTING");
       }
     }, (error) => {
       if (getClosedSessionReason(error)) {
@@ -54,7 +61,7 @@ export function Searching() {
       }
     });
     return stop;
-  }, [sessionId, setSearchStage, resetAll]);
+  }, [sessionId, setSearchStage, resetAll, setAppState, lang]);
 
   useEffect(() => {
     const backendIdx = backendComplete

@@ -26,6 +26,7 @@ from schemas import (
     ChatResponse,
     SearchStatusResponse,
     NextBatchResponse,
+    PropertyResult,
     RejectSingleResponse,
     RejectAllResponse,
     ActionResolveResponse,
@@ -921,6 +922,12 @@ async def search_status(session_id: str):
     if status in ["scraping", "ranking", "generating_remarks"]:
         return SearchStatusResponse(status=status)
 
+    if status == "error":
+        # Pipeline aborted in BackgroundTasks (e.g. Playwright unavailable
+        # on Windows). Surface a terminal state so the frontend can leave
+        # the Searching screen instead of polling indefinitely.
+        return SearchStatusResponse(status="error", results=[], remarks=[])
+
     if status == "complete":
         # Calculate batch
         total = len(search_session.all_results)
@@ -929,6 +936,11 @@ async def search_status(session_id: str):
         batch_results = search_session.all_results[batch_start:batch_end]
 
         has_more = (batch_end < total)
+        remarks = build_remarks_for_batch(search_session, batch_results)
+        flat_results = [
+            _to_property_result(p, remarks[i], batch_start + i)
+            for i, p in enumerate(batch_results)
+        ]
 
         return SearchStatusResponse(
             status="complete",
@@ -940,8 +952,8 @@ async def search_status(session_id: str):
                 getattr(search_session, "llm_filter_degraded", False)
                 or _scraper_seeder.FLAGS.forced_demo
             ),
-            results=batch_results,
-            remarks=build_remarks_for_batch(search_session, batch_results),
+            results=flat_results,
+            remarks=remarks,
         )
 
     # CRIT-2: when stage is "idle" (pipeline not yet scheduled), report idle
@@ -973,6 +985,11 @@ async def next_batch(request: NextBatchRequest):
     batch_results = search_session.all_results[batch_start:batch_end]
 
     has_more = (batch_end < total)
+    remarks = build_remarks_for_batch(search_session, batch_results or [])
+    flat_results = [
+        _to_property_result(p, remarks[i], batch_start + i)
+        for i, p in enumerate(batch_results or [])
+    ]
 
     return NextBatchResponse(
         batch_index=search_session.batch_index,
@@ -983,8 +1000,8 @@ async def next_batch(request: NextBatchRequest):
             getattr(search_session, "llm_filter_degraded", False)
             or _scraper_seeder.FLAGS.forced_demo
         ),
-        results=batch_results or [],
-        remarks=build_remarks_for_batch(search_session, batch_results or []),
+        results=flat_results,
+        remarks=remarks,
     )
 
 
@@ -1156,6 +1173,36 @@ async def update_requirements(request: UpdateRequirementsRequest):
 
 
 # ─── Phase-3 helpers ────────────────────────────────────────────────
+def _to_property_result(prop, remark, index):
+    """
+    Flatten the nested Property model into the flat PropertyResult shape the
+    frontend's TypeScript contract (property-agent-ui/src/lib/types.ts)
+    expects. Returning the raw Property model caused
+    `property.price.toLocaleString()` in ResultsBatch.tsx to throw because
+    title/price/location were nested under `scraped_data`, which propagated
+    to the root ErrorComponent ("This page didn't load").
+    """
+    sd = prop.scraped_data
+    price = sd.price if sd.price is not None else 0.0
+    location = sd.location_area or sd.city or sd.region or ""
+    images = list(sd.image_urls or [])
+    tier = remark.tier if remark is not None else ("tier_1" if index < 5 else "tier_2")
+    return PropertyResult(
+        property_id=prop.property_id,
+        title=sd.title,
+        price=float(price),
+        location=location,
+        feature_tags=list(prop.feature_tags or []),
+        tier=tier,
+        ai_remarks=(remark.remarks if remark is not None else None),
+        missing_features=(list(remark.missing_features) if remark is not None else []),
+        remedy=(remark.remedy if remark is not None else None),
+        image_url=(images[0] if images else None),
+        url=sd.listing_url,
+        is_mock=bool(getattr(prop, "is_mock", False)),
+    )
+
+
 def build_remarks_for_batch(search_session, batch_results):
     """
     Build a list of Optional[PropertyRemark] aligned 1:1 with batch_results.

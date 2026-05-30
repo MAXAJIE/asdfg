@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import sys
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,26 @@ class PlaywrightPool:
         async with self._start_lock:
             if self._context is not None:
                 return
+            # Windows safety gate: Playwright spawns its node-side driver via
+            # asyncio.create_subprocess_exec, which requires a ProactorEventLoop
+            # on Windows. If the running loop is a SelectorEventLoop (uvicorn
+            # --reload reverting the policy, worker thread with a Selector loop,
+            # etc.) async_playwright().start() raises NotImplementedError AND
+            # leaves an orphan Connection.run() Task that surfaces as the cryptic
+            # 'Task exception was never retrieved' log line and aborts the search
+            # pipeline. Detect the unsupported loop here and raise a clean
+            # RuntimeError that the scraper's existing try/except swallows,
+            # falling back to the curl-only path instead of crashing the run.
+            if sys.platform == 'win32':
+                loop = asyncio.get_running_loop()
+                proactor = getattr(asyncio, 'ProactorEventLoop', None)
+                if proactor is None or not isinstance(loop, proactor):
+                    raise RuntimeError(
+                        'PlaywrightPool requires WindowsProactorEventLoop; '
+                        f'current loop is {type(loop).__name__}. Launch the '
+                        'backend via `python startup.py` or `python main.py` '
+                        '(do NOT use `uvicorn --reload` on Windows).'
+                    )
             try:
                 from playwright.async_api import async_playwright
             except ImportError as e:

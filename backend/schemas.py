@@ -151,7 +151,7 @@ class SearchSession(BaseModel):
     remarks_by_id: dict[str, PropertyRemark] = Field(default_factory=dict)
     llm_filter_degraded: bool = False
     rejected_property_ids: list[str] = Field(default_factory=list)
-    search_stage: Literal["idle", "scraping", "ranking", "generating_remarks", "complete"] = "idle"
+    search_stage: Literal["idle", "scraping", "ranking", "generating_remarks", "complete", "error"] = "idle"
 
 
 # ─── API Response Models ────────────────────────────────────────────
@@ -177,17 +177,40 @@ class ChatResponse(BaseModel):
     proposed_value: Optional[Any] = None
 
 
+# Frontend-facing flat shape. The frontend's PropertyResult interface in
+# property-agent-ui/src/lib/types.ts expects title/price/location/tier at
+# the top level. Returning the nested Property model directly caused
+# `property.price.toLocaleString()` in ResultsBatch.tsx to throw because
+# title/price/location were nested under `scraped_data`, which bubbled up
+# to the root ErrorComponent ("This page didn't load").
+class PropertyResult(BaseModel):
+    property_id: str
+    title: Optional[str] = None
+    price: float = 0.0
+    location: str = ""
+    feature_tags: list[str] = Field(default_factory=list)
+    tier: Literal["tier_1", "tier_2"] = "tier_1"
+    ai_remarks: Optional[str] = None
+    missing_features: list[str] = Field(default_factory=list)
+    remedy: Optional[str] = None
+    image_url: Optional[str] = None
+    url: Optional[str] = None
+    is_mock: bool = False
+
+
 # FIX B2: results was list[PropertyRemark] but main.py returns list[Property].
-# Aligned to actual payload shape; frontend PropertyResult is a superset and accepts both.
+# Now flattened server-side into PropertyResult (see _to_property_result in main.py).
 class SearchStatusResponse(BaseModel):
-    status: Literal["idle", "scraping", "ranking", "generating_remarks", "complete"]
+    status: Literal["idle", "scraping", "ranking", "generating_remarks", "complete", "error"]
 
     batch_index: Optional[int] = None
     total_available: Optional[int] = None
     has_more: Optional[bool] = None
     tier3_triggered: Optional[bool] = None
     degraded: Optional[bool] = None
-    results: Optional[list[Property]] = None
+    results: Optional[list[PropertyResult]] = None
+    # Human-readable error message when status == "error".
+    error: Optional[str] = None
     # Aligned 1:1 with `results` (same length, same order) when status=="complete".
     # C1 plan-a (strict): entries may be None when no remark was generated
     # for that property. Do NOT fabricate a placeholder server-side.
@@ -201,7 +224,7 @@ class NextBatchResponse(BaseModel):
     has_more: bool
     tier3_triggered: bool
     degraded: bool
-    results: list[Property]
+    results: list[PropertyResult]
     # Aligned 1:1 with `results` (same length, same order).
     # C1 plan-a (strict): entries may be None when no remark was generated.
     remarks: list[Optional[PropertyRemark]] = Field(default_factory=list)

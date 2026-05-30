@@ -36,6 +36,22 @@ async def execute_search_pipeline(session_id: str) -> tuple[list[PropertyRemark]
     if not search_session or not dialogue_session:
         raise ValueError(f"Session not found: {session_id}")
 
+    try:
+        return await _execute_search_pipeline_inner(
+            session_id, search_session, dialogue_session,
+        )
+    except Exception as e:
+        # Pipeline-fatal failure (Playwright crash, scraper exhaust, etc.).
+        # Mark stage=="error" so the frontend SSE leaves the Searching
+        # screen instead of polling a forever-"scraping" status.
+        print(f"[search_pipeline] aborted: {type(e).__name__}: {e!r}")
+        search_session.search_stage = "error"
+        return [], False
+
+
+async def _execute_search_pipeline_inner(
+    session_id: str, search_session, dialogue_session,
+) -> tuple[list[PropertyRemark], bool]:
     phase1 = dialogue_session.phase1_data
 
     # Step 1: Fetch raw properties (with expansion)
@@ -84,6 +100,37 @@ async def execute_search_pipeline(session_id: str) -> tuple[list[PropertyRemark]
 
 
     scored_results = build_top10(tier1, tier2, dynamic_weights)
+
+    # Persist the pure-weight Top-10 to tempo_data/ranked/{session_id}.json
+    # so the chat-triggered pipeline (the path /api/v1/chat actually walks
+    # via BackgroundTasks) writes the same ranked artifact the
+    # /api/v1/scraper/run endpoint already produces. Previously only the
+    # latter wrote here, so the ranked folder stayed empty whenever the
+    # user went through chat. Written BEFORE LLM remarks so a downstream
+    # remarks failure can no longer prevent the ranking from being saved.
+    try:
+        ranked_payload = {
+            "session_id": session_id,
+            "weights_final": dynamic_weights,
+            "pool_size": len(search_session.raw_pool),
+            "top10": [
+                {
+                    "score": float(s_),
+                    "tier": t_,
+                    "property_id": p_.property_id,
+                    "title": p_.scraped_data.title,
+                    "price": p_.scraped_data.price,
+                    "listing_url": p_.scraped_data.listing_url,
+                    "image_urls": list(p_.scraped_data.image_urls or []),
+                    "feature_tags": list(p_.feature_tags or []),
+                }
+                for (s_, p_, t_) in scored_results
+            ],
+        }
+        scraper_storage.write_ranked(session_id, ranked_payload)
+    except Exception as _e:
+        print(f"[search_pipeline] write_ranked failed: "
+              f"{type(_e).__name__}: {_e!r}")
 
     # Extract properties for LLM remarks
     top_properties = [p for _, p, _ in scored_results]
