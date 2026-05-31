@@ -125,9 +125,20 @@ class Property(BaseModel):
 class PropertyRemark(BaseModel):
     property_id: str
     tier: Literal["tier_1", "tier_2"]
+    # Legacy single-language fields (kept for backwards compatibility with
+    # any client that hasn't been upgraded yet). New code should populate
+    # remarks_en / remarks_zh and remedy_en / remedy_zh below.
     remarks: str
     missing_features: list[str]
     remedy: Optional[str]
+    # Bilingual fields — generated upfront by llm_client._remark_one_property
+    # so the frontend language toggle can swap text instantly without
+    # re-calling the LLM.
+    remarks_en: Optional[str] = None
+    remarks_zh: Optional[str] = None
+    remedy_en: Optional[str] = None
+    remedy_zh: Optional[str] = None
+
 
 
 class RemarksResponse(BaseModel):
@@ -191,15 +202,31 @@ class PropertyResult(BaseModel):
     feature_tags: list[str] = Field(default_factory=list)
     tier: Literal["tier_1", "tier_2"] = "tier_1"
     ai_remarks: Optional[str] = None
+    # Bilingual AI commentary — frontend toggles between en/zh without a
+    # re-fetch. Populated by main._to_property_result from PropertyRemark.
+    ai_remarks_en: Optional[str] = None
+    ai_remarks_zh: Optional[str] = None
     missing_features: list[str] = Field(default_factory=list)
     remedy: Optional[str] = None
+    remedy_en: Optional[str] = None
+    remedy_zh: Optional[str] = None
     image_url: Optional[str] = None
-    # Full gallery (every image scraped for this listing). The Phase 3
-    # detail dialog renders this as a carousel. `image_url` above stays
-    # the single thumbnail used by the card grid.
     image_urls: list[str] = Field(default_factory=list)
     url: Optional[str] = None
     is_mock: bool = False
+    # Detail fields surfaced in the Phase 3 popup. Every field is Optional
+    # because the Mudah scraper does not always extract every attribute.
+    description: Optional[str] = None
+    property_type: Optional[str] = None
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[int] = None
+    built_up_sqft: Optional[int] = None
+    land_sqft: Optional[int] = None
+    tenure: Optional[str] = None
+    furnishing: Optional[str] = None
+    facilities: list[str] = Field(default_factory=list)
+    posted_at: Optional[str] = None
+
 
 
 # FIX B2: results was list[PropertyRemark] but main.py returns list[Property].

@@ -1,7 +1,7 @@
-diff --git a/src/lib/types.ts b/src/lib/types.ts
+diff --git a/property-agent-ui/src/lib/types.ts b/property-agent-ui/src/lib/types.ts
 index 215b361..bb3373e 100644
---- a/src/lib/types.ts
-+++ b/src/lib/types.ts
+--- a/property-agent-ui/src/lib/types.ts
++++ b/property-agent-ui/src/lib/types.ts
 @@ -54,8 +54,15 @@ export interface PropertyRemark {
    property_id: string;
    tier: "tier_1" | "tier_2";
@@ -58,10 +58,10 @@ index 215b361..bb3373e 100644
  export interface InitSessionResponse {
    session_id: string;
    status: "aligning";
-diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+diff --git a/property-agent-ui/src/lib/i18n.ts b/property-agent-ui/src/lib/i18n.ts
 index 0438b21..1099dab 100644
---- a/src/lib/i18n.ts
-+++ b/src/lib/i18n.ts
+--- a/property-agent-ui/src/lib/i18n.ts
++++ b/property-agent-ui/src/lib/i18n.ts
 @@ -352,8 +352,30 @@ export const DICT: Dict = {
    "results.detail.no_image": { en: "No photos available", zh: "暂无图片" },
    "results.detail.cta":      { en: "View on Mudah.my ↗", zh: "前往 Mudah.my ↗" },
@@ -93,10 +93,10 @@ index 0438b21..1099dab 100644
  // `t(key, lang, vars?)` — main translation entry point.
  // `vars` performs simple `{name}` substitution after lookup.
  export function t(
-diff --git a/src/components/phases/ResultsBatch.tsx b/src/components/phases/ResultsBatch.tsx
+diff --git a/property-agent-ui/src/components/phases/ResultsBatch.tsx b/property-agent-ui/src/components/phases/ResultsBatch.tsx
 index 004ce6d..d1bcb5b 100644
---- a/src/components/phases/ResultsBatch.tsx
-+++ b/src/components/phases/ResultsBatch.tsx
+--- a/property-agent-ui/src/components/phases/ResultsBatch.tsx
++++ b/property-agent-ui/src/components/phases/ResultsBatch.tsx
 @@ -1,4 +1,4 @@
 -import { useEffect, useRef, useState } from "react";
 +import { useCallback, useEffect, useRef, useState } from "react";

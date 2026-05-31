@@ -54,8 +54,15 @@ export interface PropertyRemark {
   property_id: string;
   tier: "tier_1" | "tier_2";
   remarks: string;
+  // Bilingual remarks/remedy. Backend generates both EN + ZH upfront so
+  // the language toggle on the frontend swaps text instantly without a
+  // round-trip. Legacy `remarks`/`remedy` remain as fallbacks.
+  remarks_en?: string | null;
+  remarks_zh?: string | null;
   missing_features: string[];
   remedy: string | null;
+  remedy_en?: string | null;
+  remedy_zh?: string | null;
 }
 
 // Aligned to backend DialogueMessage.role contract (user | assistant only)
@@ -81,8 +88,15 @@ export interface PropertyResult {
   // C1 plan-a (strict): backend may return null when no AI commentary was
   // generated. Treat null and undefined identically in the UI.
   ai_remarks?: string | null;
+  // Bilingual AI remarks + remedy — backend pre-generates both languages so
+  // the language toggle switches text instantly. When absent the UI falls
+  // back to the single-language `ai_remarks` / `remedy` fields.
+  ai_remarks_en?: string | null;
+  ai_remarks_zh?: string | null;
   missing_features?: string[];
   remedy?: string | null;
+  remedy_en?: string | null;
+  remedy_zh?: string | null;
   image_url?: string;
   // Full gallery used by the Phase 3 detail dialog (carousel).
   image_urls?: string[];
@@ -90,7 +104,22 @@ export interface PropertyResult {
   // C4: surfaced by backend Property model; true for demo/mock fixtures.
   // Hidden by ResultsBatch when the session is not degraded / forced_demo.
   is_mock?: boolean;
+
+  // ── Detail fields (scraped) — surfaced in the Phase 3 detail dialog ──
+  // Every field is optional because the scraper does not always extract
+  // every attribute from every Mudah.my listing.
+  description?: string | null;
+  property_type?: string | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  built_up_sqft?: number | null;
+  land_sqft?: number | null;
+  tenure?: string | null;
+  furnishing?: string | null;
+  facilities?: string[];
+  posted_at?: string | null;
 }
+
 
 export interface InitSessionResponse {
   session_id: string;

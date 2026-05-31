@@ -1203,13 +1203,29 @@ def _to_property_result(prop, remark, index):
         feature_tags=list(prop.feature_tags or []),
         tier=tier,
         ai_remarks=(remark.remarks if remark is not None else None),
+        ai_remarks_en=(getattr(remark, "remarks_en", None) if remark is not None else None),
+        ai_remarks_zh=(getattr(remark, "remarks_zh", None) if remark is not None else None),
         missing_features=(list(remark.missing_features) if remark is not None else []),
         remedy=(remark.remedy if remark is not None else None),
+        remedy_en=(getattr(remark, "remedy_en", None) if remark is not None else None),
+        remedy_zh=(getattr(remark, "remedy_zh", None) if remark is not None else None),
         image_url=(images[0] if images else None),
         image_urls=images,
         url=sd.listing_url,
         is_mock=bool(getattr(prop, "is_mock", False)),
+        # Detail fields straight from the scraped row.
+        description=sd.description,
+        property_type=sd.property_type_specific or sd.property_type,
+        bedrooms=sd.bedrooms,
+        bathrooms=sd.bathrooms,
+        built_up_sqft=sd.built_up_sqft,
+        land_sqft=sd.land_sqft,
+        tenure=sd.tenure,
+        furnishing=sd.furnishing,
+        facilities=list(sd.facilities or []),
+        posted_at=sd.posted_at,
     )
+
 
 
 def build_remarks_for_batch(search_session, batch_results):

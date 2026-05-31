@@ -653,9 +653,11 @@ class LLMClient:
             {
                 "role": "system",
                 "content": (
-                    "你是房產顧問，根據單一房源生成簡短中文 AI 評論。"
-                    "嚴格輸出 JSON：{\"remarks\":str,\"missing_features\":[str],"
-                    "\"remedy\":str|null}。不要 markdown，不要解釋。"
+                    "你是房產顧問。根據單一房源同時生成英文與中文 AI 評論，"
+                    "讓前端的語言切換按鈕可以瞬間切換而不需重新呼叫 LLM。"
+                    "嚴格輸出 JSON：{\"remarks_en\":str,\"remarks_zh\":str,"
+                    "\"missing_features\":[str],\"remedy_en\":str|null,"
+                    "\"remedy_zh\":str|null}。不要 markdown，不要解釋。"
                 ),
             },
             {
@@ -663,9 +665,10 @@ class LLMClient:
                 "content": (
                     f"代理風格：{agent_style}\n\n房源：\n{prop_block}\n\n"
                     "要求：\n"
-                    "- tier_1：正向推薦，missing_features=[]，remedy=null\n"
-                    "- tier_2：坦誠瑕疵 + 提供 remedy\n"
-                    "- 洪水高風險主動披露"
+                    "- tier_1：正向推薦，missing_features=[]，remedy_en=null，remedy_zh=null\n"
+                    "- tier_2：坦誠瑕疵 + 提供 remedy（兩種語言都要寫）\n"
+                    "- 洪水高風險主動披露\n"
+                    "- remarks_en 用英文，remarks_zh 用繁體中文，兩者語意必須一致"
                 ),
             },
         ]
@@ -673,7 +676,7 @@ class LLMClient:
         payload = {
             "model": model,
             "messages": messages,
-            "max_tokens": REMARKS_MAX_TOKENS,
+            "max_tokens": REMARKS_MAX_TOKENS * 2,  # bilingual roughly doubles output
             "response_format": {"type": "json_object"},
         }
 
@@ -684,12 +687,6 @@ class LLMClient:
                 try:
                     response = await self._call_api(payload)
                 except httpx.HTTPStatusError as he:
-                    # Model-routing failure (slug deprecated / not deployed
-                    # on this account). Retry ONCE with the project's main
-                    # LLM_MODEL so remarks still get a real LLM pass instead
-                    # of the templated degraded fallback. Only fires when
-                    # the model we just tried is NOT already LLM_MODEL, to
-                    # avoid an infinite loop on a genuinely-bad payload.
                     if (
                         he.response.status_code in (400, 404)
                         and used_model != LLM_MODEL
@@ -704,26 +701,44 @@ class LLMClient:
                         raise
                 content = response["choices"][0]["message"]["content"]
                 parsed = json.loads(content)
+                remarks_en = str(parsed.get("remarks_en") or "").strip()
+                remarks_zh = str(parsed.get("remarks_zh") or "").strip()
+                remedy_en = parsed.get("remedy_en")
+                remedy_zh = parsed.get("remedy_zh")
+                # Legacy single-language fields default to the Chinese
+                # version so existing clients keep working.
+                legacy_remarks = remarks_zh or remarks_en or (
+                    f"{prop.scraped_data.title or prop.property_id} — {prop.scraped_data.price}"
+                )
+                legacy_remedy = remedy_zh or remedy_en
                 return PropertyRemark(
                     property_id=prop.property_id,
                     tier=tier,
-                    remarks=str(parsed.get("remarks") or "").strip()
-                            or f"{prop.scraped_data.title or prop.property_id} — {prop.scraped_data.price}",
+                    remarks=legacy_remarks,
+                    remarks_en=remarks_en or None,
+                    remarks_zh=remarks_zh or None,
                     missing_features=list(parsed.get("missing_features") or []),
-                    remedy=parsed.get("remedy"),
+                    remedy=legacy_remedy,
+                    remedy_en=remedy_en,
+                    remedy_zh=remedy_zh,
                 )
             except Exception as e:
-                # Per-property fallback. Logs WHY (type+repr) so it is no
-                # longer an empty "...degraded mode: " message.
                 print(f"[remarks] {prop.property_id} fell back: "
                       f"{type(e).__name__}: {e!r}")
+                fallback_zh = f"{prop.scraped_data.title or prop.property_id} 位於目標區，價格 {prop.scraped_data.price}。"
+                fallback_en = f"{prop.scraped_data.title or prop.property_id} in the target area at {prop.scraped_data.price}."
                 return PropertyRemark(
                     property_id=prop.property_id,
                     tier=tier,
-                    remarks=f"{prop.scraped_data.title or prop.property_id} 位於目標區，價格 {prop.scraped_data.price}。",
+                    remarks=fallback_zh,
+                    remarks_en=fallback_en,
+                    remarks_zh=fallback_zh,
                     missing_features=[],
                     remedy=None,
+                    remedy_en=None,
+                    remedy_zh=None,
                 )
+
 
     async def generate_remarks_async(
         self,

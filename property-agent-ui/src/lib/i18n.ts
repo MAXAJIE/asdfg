@@ -352,7 +352,29 @@ export const DICT: Dict = {
   "results.detail.no_image": { en: "No photos available", zh: "暂无图片" },
   "results.detail.cta":      { en: "View on Mudah.my ↗", zh: "前往 Mudah.my ↗" },
   "results.detail.close":    { en: "Close", zh: "关闭" },
+
+  // ── Phase 3 description section ───────────────────────────────────
+  "results.detail.description":   { en: "Description",        zh: "房源描述" },
+  "results.detail.specs":         { en: "Specifications",     zh: "房源规格" },
+  "results.detail.facilities":    { en: "Facilities",         zh: "设施" },
+  "results.detail.no_description":{ en: "No description provided by the listing.", zh: "此房源未提供文字描述。" },
+  "results.detail.field.property_type": { en: "Property type",  zh: "房屋类型" },
+  "results.detail.field.bedrooms":      { en: "Bedrooms",       zh: "卧室" },
+  "results.detail.field.bathrooms":     { en: "Bathrooms",      zh: "浴室" },
+  "results.detail.field.built_up":      { en: "Built-up",       zh: "建筑面积" },
+  "results.detail.field.land":          { en: "Land area",      zh: "土地面积" },
+  "results.detail.field.tenure":        { en: "Tenure",         zh: "地契" },
+  "results.detail.field.furnishing":    { en: "Furnishing",     zh: "家具" },
+  "results.detail.field.location":      { en: "Location",       zh: "位置" },
+  "results.detail.field.price":         { en: "Price",          zh: "价格" },
+  "results.detail.field.posted_at":     { en: "Listed",         zh: "上架时间" },
+  "results.detail.unit.sqft":           { en: "sq ft",          zh: "平方英尺" },
+  "results.detail.inspect.hint":        { en: "Click image to inspect", zh: "点击图片放大查看" },
+  "results.detail.inspect.zoom_in":     { en: "Zoom in",        zh: "放大" },
+  "results.detail.inspect.zoom_out":    { en: "Zoom out",       zh: "缩小" },
+  "results.detail.inspect.reset":       { en: "Reset",          zh: "重置" },
 };
+
 
 // `t(key, lang, vars?)` — main translation entry point.
 // `vars` performs simple `{name}` substitution after lookup.
