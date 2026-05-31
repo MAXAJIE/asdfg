@@ -44,6 +44,31 @@ import {
 import { t, type Lang } from "@/lib/i18n";
 import { toast } from "sonner";
 
+// Strip HTML-string artifacts that Mudah listings ship inside the description
+// (literal `<br>` tags, `&nbsp;` entities, stray tags). The scraper saves the
+// raw HTML body — clean here at render time so we never mutate stored data.
+function cleanDescription(raw: string): string {
+  return raw
+    // <br>, <br/>, <br />, <BR> etc. → newline
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    // Any other HTML tag → drop
+    .replace(/<\/?[a-zA-Z][^>]*>/g, "")
+    // Common HTML entities
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/gi, "'")
+    // Numeric entities (e.g. &#8203;)
+    .replace(/&#(\d+);/g, (_m, n) => String.fromCharCode(Number(n)))
+    // Collapse 3+ blank lines and trim trailing whitespace per line
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export function ResultsBatch() {
   const lang = useAppStore((s) => s.lang);
   const appState = useAppStore((s) => s.appState);
@@ -658,12 +683,14 @@ function PropertyDetailDialog({
             </div>
           )}
 
-          {/* Facilities / amenities */}
-          {property.facilities && property.facilities.length > 0 && (
-            <div className="rounded-xl border border-border bg-surface/50 p-4">
-              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
-                {t("results.detail.facilities", lang)}
-              </div>
+          {/* Amenities — every facility the backend supplied for this
+              listing. Always rendered so users know whether the listing
+              actually advertised any amenities. */}
+          <div className="rounded-xl border border-border bg-surface/50 p-4">
+            <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
+              {t("results.detail.amenities", lang)}
+            </div>
+            {property.facilities && property.facilities.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {property.facilities.map((f) => (
                   <span
@@ -674,17 +701,22 @@ function PropertyDetailDialog({
                   </span>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t("results.detail.no_amenities", lang)}
+              </p>
+            )}
+          </div>
 
-          {/* Free-form listing description */}
+          {/* Free-form listing description. Raw description ships with HTML
+              artifacts (<br>, &nbsp;); cleanDescription normalises them. */}
           <div className="rounded-xl border border-border bg-surface/50 p-4">
             <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-primary">
               {t("results.detail.description", lang)}
             </div>
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
               {property.description && property.description.trim()
-                ? property.description
+                ? cleanDescription(property.description)
                 : t("results.detail.no_description", lang)}
             </p>
           </div>

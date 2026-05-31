@@ -357,6 +357,8 @@ export const DICT: Dict = {
   "results.detail.description":   { en: "Description",        zh: "房源描述" },
   "results.detail.specs":         { en: "Specifications",     zh: "房源规格" },
   "results.detail.facilities":    { en: "Facilities",         zh: "设施" },
+  "results.detail.amenities":     { en: "Amenities",          zh: "设施配套" },
+  "results.detail.no_amenities":  { en: "This listing did not advertise any amenities.", zh: "此房源未列出任何设施。" },
   "results.detail.no_description":{ en: "No description provided by the listing.", zh: "此房源未提供文字描述。" },
   "results.detail.field.property_type": { en: "Property type",  zh: "房屋类型" },
   "results.detail.field.bedrooms":      { en: "Bedrooms",       zh: "卧室" },

@@ -1,0 +1,58 @@
+{
+  "session_id": "8bf48d1e-11e8-48c8-a80f-72a9a269325f",
+  "weights_final": {
+    "price_fit_score": 0.3482142857142857,
+    "security_score": 0.2232142857142857,
+    "facilities_score": 0.19642857142857142,
+    "lifestyle_proximity_score": 0.13392857142857142,
+    "maintenance_fee_score": 0.05357142857142856,
+    "transit_proximity_score": 0.044642857142857144
+  },
+  "pool_size": 24,
+  "top10": [
+    {
+      "score": 0.05357142857142856,
+      "tier": "tier_1",
+      "property_id": "MUDAH::134740223",
+      "title": "Platinum Hill Pv 8【Freehold With 3 Carpark】Melati Condominium For Sale",
+      "price": 540000.0,
+      "listing_url": "https://www.mudah.my/platinum-hill-pv-8-freehold-with-3-carpark-melati-condominium-for-sale-114720412.htm",
+      "image_urls": [
+        "https://cdn.rnudah.com/images/plain/30aba64171efa59f8f4c0e9e4ced45bd-2983673759269423128.jpg",
+        "https://cdn.rnudah.com/images/plain/deafc237edaf6407e5e4564b6991723b-2983673759722473496.jpg",
+        "https://cdn.rnudah.com/images/plain/fd4239fadba5021da10d5667ea7c284d-2983673758892813921.jpg",
+        "https://cdn.rnudah.com/images/plain/a5043856af7c14f79675531de34af57d-2983673773614336024.jpg",
+        "https://cdn.rnudah.com/images/plain/78ca0aaefa4291b066dab177a40bf632-2983673773278726168.jpg"
+      ],
+      "feature_tags": []
+    },
+    {
+      "score": 0.05357142857142856,
+      "tier": "tier_1",
+      "property_id": "MUDAH::129101993",
+      "title": "Kepong The Henge Condominium Non Bumi Near Mrt 4 Carpark High ROI",
+      "price": 550000.0,
+      "listing_url": "https://www.mudah.my/kepong-the-henge-condominium-non-bumi-near-mrt-4-carpark-high-roi-109636695.htm",
+      "image_urls": [
+        "https://cdn.rnudah.com/images/plain/12201d4dd3c46388a444ea1a5b4b3d70-2930459995994438914.jpg",
+        "https://cdn.rnudah.com/images/plain/c9c97cf96b9f40d187fafd1bcaec57a1-2912254048972103413.jpg",
+        "https://cdn.rnudah.com/images/plain/8578479cd645bd265f56df4eef304164-2912254048468721397.jpg",
+        "https://cdn.rnudah.com/images/plain/a1bf32931ad2c070aa8097c388e8a542-2912254048548431766.jpg",
+        "https://cdn.rnudah.com/images/plain/9fc886806a12451020852f43dd8becc5-2912254049337026454.jpg"
+      ],
+      "feature_tags": []
+    },
+    {
+      "score": 0.05357142857142856,
+      "tier": "tier_1",
+      "property_id": "MUDAH::134931970",
+      "title": "Mid High Floor, Below Market, Super Low Density Condo 2 Carpark",
+      "price": 580000.0,
+      "listing_url": "https://www.mudah.my/mid-high-floor-below-market-super-low-density-condo-2-carpark-114890094.htm",
+      "image_urls": [
+        "https://cdn.rnudah.com/images/plain/414123b51487ecce3998493fed847dcf-2986612117064505315.jpg"
+      ],
+      "feature_tags": []
+    }
+  ]
+}
